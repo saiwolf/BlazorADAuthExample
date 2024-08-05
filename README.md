@@ -16,9 +16,9 @@ checking, the password is **never** stored in the DB. Only user information pert
 
 ## Considerations
 
-The app by default is configured to require a logged in user to access any resource other than the login page. While the DB seed routine creates a `Users` role, it is not utilized by default.
-
-The Nav Menu makes use of `<AuthorizedView>` to control what's shown to anonymous users and logged in users.
+- The app, by default, is configured to require a logged in user to access any resource other than the login page. While the DB seed routine creates a `Users` role, it is not utilized by default.
+- The render mode of the app is set to [Static Server Rendering](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-8.0) by default.
+- The Nav Menu makes use of `<AuthorizedView>` to control what's shown to anonymous users and logged in users.
 
 ## First Time Setup
 
@@ -43,3 +43,63 @@ The Nav Menu makes use of `<AuthorizedView>` to control what's shown to anonymou
 ## Running the app
 > It is highly recommended to use Visual Studio, Rider, or VS Code for debugging of the app.
 - The app can be run from the command line with `dotnet run` in the top project directory.
+
+## What If I Want Interactivity Globally?
+
+One major caveat of Interactive Render Modes in Blazor is the lack
+of access to `HttpContext`. Server mode runs over a SignalR circuit, and WASM runs
+in the client. Because of this, Identity uses Static Server Rendering on the Login page
+component.
+
+If you want to enable Interactivity on a per-component basis, then no changes are
+required. Just make sure that `/Components/Account/Pages/Login.razor` stays as SSR.
+
+However, if you want to enable Interactivity globally, then some changes are required:
+
+- Add the following to `/Components/App.razor`
+  ```c#
+  @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? RenderModeForPage => HttpContext.Request.Path.StartsWithSegments("/account")
+        ? null
+        : InteractiveServer; // change to the render mode you want
+  }
+  ```
+- For both the `<HeadOutlet />` and `<Routes />` tags in App.razor, modify them thusly:
+  ```html
+  <HeadOutlet @rendermode="RenderModeForPage" />
+  <Routes @rendermode="RenderModeForPage" />
+  ```
+
+- Replace the `MapAdditionalIdentityEndPoints` method in `/Components/Account/IdentityComponentsEndpointRouteBuilderExtensions.cs` with:
+  ```c#
+    // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
+    public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        ArgumentNullException.ThrowIfNull(endpoints);
+
+        var accountGroup = endpoints.MapGroup("/account");
+
+        accountGroup.MapPost("/logout", async (
+            ClaimsPrincipal user,
+            SignInManager<ApplicationUser> signInManager,
+            [FromForm] string returnUrl) =>
+        {
+            await signInManager.SignOutAsync();
+            return TypedResults.LocalRedirect($"/account/login?ReturnUrl=/{returnUrl}");
+        });
+
+        return accountGroup;
+    }
+  ```
+- Update the `RedirectToWithStatus` method in `/Components/Account/IdentityUserAccessor.cs`:
+  ```c#
+  redirectManager.RedirectToWithStatus("/account/invalid-user, $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
+  ```
+- Update the `NavigationManager.NavigateTo` method in `/Components/Account/Shared/RedirectToLogin.razor`:
+  ```c#
+  NavigationManager.NavigateTo($"/accounts/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+  ```
+- Every page underneath `/Components/Account/Pages` needs to have its `@page` directive prefixed with '/account/'.
