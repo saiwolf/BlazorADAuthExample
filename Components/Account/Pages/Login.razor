@@ -1,0 +1,110 @@
+﻿@page "/login"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using BlazorADAuth.Data
+
+@attribute [AllowAnonymous]
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log in</PageTitle>
+
+<PageScript Src="./Components/Account/Pages/Login.razor.js" />
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <section>
+            <StatusMessage Message="@errorMessage" />
+            <EditForm id="loginForm" Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+                <DataAnnotationsValidator />
+                <h2 class="text-center">Use your Active Directory credentials to log in.</h2>
+                <hr />
+                <ValidationSummary class="text-danger" role="alert" />
+                <div class="input-group mb-3">                    
+                    <div class="form-floating">
+                        <InputText @bind-Value="Input.UserName"
+                                    class="form-control"
+                                    autocomplete="username"
+                                    aria-required="true"
+                                    placeholder="john.doe" />
+                        <label for="Input.Username">User Name</label>
+                    </div>
+                    <span class="input-group-text">@@your.domain</span>
+                    <ValidationMessage For="() => Input.UserName" class="text-danger" />
+                </div>
+                <div class="form-floating mb-3">                    
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />                    
+                    <label for="Input.Password" class="form-label">Password</label>
+                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <InputCheckbox 
+                        @bind-Value="Input.RememberMe"
+                        class="form-check-input"
+                        title="Remember Me" placeholder=""/>
+                    <label class="form-check-label" for="Input.RememberMe">Remember Me</label>
+                </div>
+                <div>
+                    <button id="loginSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                </div>
+            </EditForm>
+        </section>
+    </div>
+</div>
+
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        }
+    }
+
+    public async Task LoginUser()
+    {
+        // This doesn't count login failures towards account lockout
+        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+        var result = await SignInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("User logged in.");
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
+        else
+        {
+            errorMessage = "Error: Invalid login attempt.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        public string UserName { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
+}
