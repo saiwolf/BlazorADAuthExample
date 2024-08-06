@@ -19,3 +19,14 @@
 </body>
 
 </html>
+
+@* Uncomment the below code to enable global interactivity.*@
+@* Then add @rendermode="RenderModeForPage" to both <HeadOutlet /> and <Routes />*@
+@* @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? RenderModeForPage => HttpContext.Request.Path.StartsWithSegments("/account")
+        ? null
+        : InteractiveServer; // change to the render mode you want
+} *@
