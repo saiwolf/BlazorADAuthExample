@@ -8,17 +8,21 @@ namespace Microsoft.AspNetCore.Routing;
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {
     // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
-    public static void MapAdditionalIdentityEndpoints(this WebApplication app)
+    public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        ArgumentNullException.ThrowIfNull(app);
+        ArgumentNullException.ThrowIfNull(endpoints);
 
-        app.MapPost("/logout", async (
+        RouteGroupBuilder accountGroup = endpoints.MapGroup("/account");
+
+        accountGroup.MapPost("/logout", async (
             ClaimsPrincipal user,
             SignInManager<ApplicationUser> signInManager,
             [FromForm] string returnUrl) =>
         {
             await signInManager.SignOutAsync();
-            return TypedResults.LocalRedirect($"~/{returnUrl}");
+            return TypedResults.LocalRedirect($"/account/login?ReturnUrl=/{returnUrl}");
         });
+
+        return accountGroup;
     }
 }

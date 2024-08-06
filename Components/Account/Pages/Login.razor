@@ -1,4 +1,4 @@
-﻿@page "/login"
+﻿@page "/account/login"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -25,17 +25,18 @@
                 <DataAnnotationsValidator />
                 <h2 class="text-center">Use your Active Directory credentials to log in.</h2>
                 <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="input-group mb-3">                    
-                    <div class="form-floating">
-                        <InputText @bind-Value="Input.UserName"
-                                    class="form-control"
-                                    autocomplete="username"
-                                    aria-required="true"
-                                    placeholder="john.doe" />
-                        <label for="Input.Username">User Name</label>
+                <div class="mb-3">
+                    <div class="input-group">
+                        <div class="form-floating">
+                            <InputText @bind-Value="Input.UserName"
+                                        class="form-control"
+                                        autocomplete="username"
+                                        aria-required="true"
+                                        placeholder="john.doe" />
+                            <label for="Input.Username">User Name</label>                        
+                        </div>                    
+                        <span class="input-group-text">@@your.domain</span>                        
                     </div>
-                    <span class="input-group-text">@@your.domain</span>
                     <ValidationMessage For="() => Input.UserName" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">                    
@@ -97,10 +98,10 @@
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "Please enter your username.")]
         public string UserName { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = "Please enter your password.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 

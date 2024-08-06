@@ -57,12 +57,12 @@ try
 
     services.ConfigureApplicationCookie(options =>
     {
-        options.AccessDeniedPath = "/access-denied";
+        options.AccessDeniedPath = "/account/access-denied";
         options.Cookie.Name = "BlazorADAuth.Cookie";
         options.Cookie.HttpOnly = true;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-        options.LoginPath = new PathString("/login");
-        options.LogoutPath = new PathString("/logout");
+        options.LoginPath = new PathString("/account/login");
+        options.LogoutPath = new PathString("/account/logout");
         options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
         options.SlidingExpiration = true;
     });
