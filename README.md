@@ -48,58 +48,16 @@ checking, the password is **never** stored in the DB. Only user information pert
 
 One major caveat of Interactive Render Modes in Blazor is the lack
 of access to `HttpContext`. Server mode runs over a SignalR circuit, and WASM runs
-in the client. Because of this, Identity uses Static Server Rendering on the Login page
-component.
+in the client. Because of this, Identity uses Static Server Rendering with its razor
+components and code.
 
 If you want to enable Interactivity on a per-component basis, then no changes are
-required. Just make sure that `/Components/Account/Pages/Login.razor` stays as SSR.
+required. Just make sure to not add any `@rendermode` to any Identity pages under `/Component/Accounts/Pages`.
 
 However, if you want to enable Interactivity globally, then some changes are required:
 
-- Add the following to `/Components/App.razor`
-  ```c#
-  @code {
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+- Uncomment the `@code {}` block in `/Components/App.razor`
+- Add `@rendermode="RenderModeForPage"` to both `<HeadOutlet />` and `<Routes />`
 
-    private IComponentRenderMode? RenderModeForPage => HttpContext.Request.Path.StartsWithSegments("/account")
-        ? null
-        : InteractiveServer; // change to the render mode you want
-  }
-  ```
-- For both the `<HeadOutlet />` and `<Routes />` tags in App.razor, modify them thusly:
-  ```html
-  <HeadOutlet @rendermode="RenderModeForPage" />
-  <Routes @rendermode="RenderModeForPage" />
-  ```
-
-- Replace the `MapAdditionalIdentityEndPoints` method in `/Components/Account/IdentityComponentsEndpointRouteBuilderExtensions.cs` with:
-  ```c#
-    // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
-    public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
-    {
-        ArgumentNullException.ThrowIfNull(endpoints);
-
-        var accountGroup = endpoints.MapGroup("/account");
-
-        accountGroup.MapPost("/logout", async (
-            ClaimsPrincipal user,
-            SignInManager<ApplicationUser> signInManager,
-            [FromForm] string returnUrl) =>
-        {
-            await signInManager.SignOutAsync();
-            return TypedResults.LocalRedirect($"/account/login?ReturnUrl=/{returnUrl}");
-        });
-
-        return accountGroup;
-    }
-  ```
-- Update the `RedirectToWithStatus` method in `/Components/Account/IdentityUserAccessor.cs`:
-  ```c#
-  redirectManager.RedirectToWithStatus("/account/invalid-user, $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
-  ```
-- Update the `NavigationManager.NavigateTo` method in `/Components/Account/Shared/RedirectToLogin.razor`:
-  ```c#
-  NavigationManager.NavigateTo($"/accounts/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
-  ```
-- Every page underneath `/Components/Account/Pages` needs to have its `@page` directive prefixed with '/account/'.
+> **Note**: Any page starting with `/account` will be rendered as SSR with this method, as these
+pages rely on access to `HttpContext` which is not present otherwise.
