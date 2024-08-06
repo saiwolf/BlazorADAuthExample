@@ -38,6 +38,14 @@
                     </NavLink>
                 </div>
 
+                @if (context.User.IsInRole("Admin"))
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="admin">
+                            <span class="bi bi-person-fill-gear-nav-menu" aria-hidden="true"></span>Admin Area
+                        </NavLink>
+                    </div>
+                }
 
                 <div class="nav-item px-3">
                     <form action="/account/logout" method="post">
