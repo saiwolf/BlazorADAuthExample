@@ -1,5 +1,6 @@
 ﻿using BlazorADAuth.Contracts;
 using BlazorADAuth.Entities.Auth;
+using BlazorADAuth.Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
@@ -25,6 +26,7 @@ public class AppUserManager<TUser>(
     private readonly ILogger<UserManager<TUser>> _logger = logger;
     private readonly IAdUserService _adUserService = adUserService;
 
+    /// <inheritdoc/>
     public override async Task<bool> CheckPasswordAsync(TUser user, string password)
     {
         try
@@ -43,6 +45,7 @@ public class AppUserManager<TUser>(
         }
     }
 
+    ///<inheritdoc/>
     public override async Task<TUser?> GetUserAsync(ClaimsPrincipal user)
     {        
         try

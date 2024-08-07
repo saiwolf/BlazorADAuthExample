@@ -4,6 +4,18 @@
 
 <h2>Admin Area</h2>
 
-@code {
+@if(!string.IsNullOrEmpty(statusMessage))
+{
+    <StatusMessage />
+}
 
+<ul>
+    <li><NavLink href="/admin/create-user">Create New User</NavLink></li>
+</ul>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; } = default!;
+
+    private string? statusMessage;
 }

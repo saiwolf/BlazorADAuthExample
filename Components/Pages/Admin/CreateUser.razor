@@ -1,0 +1,171 @@
+﻿@page "/admin/create-user"
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.EntityFrameworkCore
+
+@inject RoleManager<ApplicationRole> RoleManager
+@inject AppUserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject IAdUserService AdUserService
+@inject ILogger<CreateUser> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Create new App User</PageTitle>
+
+<PageScript Src="./Components/Pages/Admin/CreateUser.razor.js" />
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <StatusMessage Message="@Message" />
+        <EditForm id="createNewUserForm" method="post" OnValidSubmit="CreateNewUser"
+            FormName="createNewUser" Model="Input">
+            <DataAnnotationsValidator />
+            <h2 class="text-center fw-bold">Create a new account.</h2>
+            <hr />
+            <ValidationSummary />
+            <div class="mb-3">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <InputText @bind-Value="Input.UserName"
+                                   class="form-control" autocomplete="username"
+                                   aria-required="true" placeholder="john.doe" 
+                                   required />
+                        <label for="Input.Username">User Name</label>
+                    </div>
+                    <span class="input-group-text">@@your.domain</span>
+                </div>
+                <ValidationMessage For="() => Input.UserName" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">                
+                <InputText @bind-Value="Input.Email" type="email"
+                    class="form-control" autocomplete="email"
+                    aria-required="true" placeholder="john.doe@your.domain"
+                    required />
+                <label for="Input.Email">Email</label>
+                <ValidationMessage For="() => Input.Email"  class="text-danger"/>
+            </div>
+            <div class="form-floating mb-3">                
+                <InputSelect @bind-Value="Input.Role" class="form-select" aria-label="Role" aria-required="true">
+                    <option value="">Please select a role</option>
+                    @foreach (var role in Roles)
+                    {
+                        <option value="@role.Name">@role.Name</option>
+                    }
+                </InputSelect>
+                <label for="Input.Role">Role</label>
+                <ValidationMessage For="() => Input.Role" class="text-danger" />
+            </div>
+            <div>
+                <button id="createNewUserSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Add User</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private IEnumerable<IdentityError>? identityErrors;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private List<ApplicationRole> Roles { get; set; } = [];
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Roles = await RoleManager.Roles.OrderBy(o => o.Name).ToListAsync();
+    }
+
+    public async Task CreateNewUser(EditContext editContext)
+    {
+        var user = CreateAppUser();
+
+        await UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+        var emailStore = GetEmailStore();
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
+        var adUser = await ValidateADUser(Input.UserName);
+
+        if (adUser is null)
+        {
+            identityErrors = [IdentityErrorExtensions.ADInvalidPassword()];
+            return;
+        }
+
+        user.DisplayName = adUser.DisplayName;
+
+        var result = await UserManager.CreateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            identityErrors = result.Errors;
+            return;
+        }
+
+        Logger.LogInformation("Added user: `{userName}` with email: `{email}` to app.", Input.UserName, Input.Email);
+
+        var roleResult = await UserManager.AddToRoleAsync(user, Input.Role);
+
+        if (!roleResult.Succeeded)
+        {
+            identityErrors = roleResult.Errors;
+            return;
+        }
+
+        Logger.LogInformation("Added user: `{userName}` with email: `{email}` to role: `{role}`.", Input.UserName, Input.Email, Input.Role);
+
+        RedirectManager.RedirectToWithStatus("/admin", "User added!", HttpContext);
+    }
+
+    private async Task<AdUser?> ValidateADUser(string username)
+    {
+        return await AdUserService.GetAdUser(username);
+    }
+
+    private ApplicationUser CreateAppUser()
+    {
+        try
+        {
+            return Activator.CreateInstance<ApplicationUser>();
+        }
+        catch
+        {
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+        }
+    }
+
+    private IUserEmailStore<ApplicationUser> GetEmailStore()
+    {
+        if (!UserManager.SupportsUserEmail)
+        {
+            throw new NotSupportedException("This UI requires a user store with email support.");
+        }
+        return (IUserEmailStore<ApplicationUser>)UserStore;
+    }
+    private sealed class InputModel
+    {
+        [Required]
+        [Display(Name = "AD Username")]
+        public string UserName { get; set; } = "";
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [Display(Name = "Role")]
+        public string Role { get; set; } = "User";
+    }
+}

@@ -1,1 +1,9 @@
-﻿@attribute [Authorize(Roles = "Admin")]
+﻿@using BlazorADAuth.Components.Account
+@using BlazorADAuth.Components.Account.Shared
+@using BlazorADAuth.Components.Pages.Admin.Layout
+@using BlazorADAuth.Contracts
+@using BlazorADAuth.Entities.Auth
+@using BlazorADAuth.Helpers
+@using BlazorADAuth.Services.Auth
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin")]
