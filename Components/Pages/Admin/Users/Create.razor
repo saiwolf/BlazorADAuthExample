@@ -1,4 +1,4 @@
-﻿@page "/admin/create-user"
+﻿@page "/admin/users/create"
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
@@ -10,13 +10,13 @@
 @inject AppUserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject IAdUserService AdUserService
-@inject ILogger<CreateUser> Logger
+@inject ILogger<Create> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Create new App User</PageTitle>
 
-<PageScript Src="./Components/Pages/Admin/CreateUser.razor.js" />
+<PageScript Src="./Components/Pages/Admin/Users/Create.razor.js" />
 
 <div class="row">
     <div class="col-md-8 mx-auto">
@@ -95,15 +95,16 @@
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
-        var adUser = await ValidateADUser(Input.UserName);
+        var adUser = await AdUserService.GetAdUser(Input.UserName);
 
-        if (adUser is null)
+        if (adUser is null ||
+            adUser.SamAccountName is null)
         {
-            identityErrors = [IdentityErrorExtensions.ADInvalidPassword()];
+            identityErrors = [IdentityErrorExtensions.ADInvalidUserName()];
             return;
         }
 
-        user.DisplayName = adUser.DisplayName;
+        user.DisplayName = adUser.DisplayName ?? adUser.SamAccountName;
 
         var result = await UserManager.CreateAsync(user);
 
@@ -125,12 +126,7 @@
 
         Logger.LogInformation("Added user: `{userName}` with email: `{email}` to role: `{role}`.", Input.UserName, Input.Email, Input.Role);
 
-        RedirectManager.RedirectToWithStatus("/admin", "User added!", HttpContext);
-    }
-
-    private async Task<AdUser?> ValidateADUser(string username)
-    {
-        return await AdUserService.GetAdUser(username);
+        RedirectManager.RedirectToWithStatus("/admin", "User added!", HttpContext!);
     }
 
     private ApplicationUser CreateAppUser()

@@ -25,7 +25,7 @@ function addEvent() {
         console.log("Submitting.");
         e.preventDefault();
         btn.disabled = true;
-        btn.innerText = "Logging in, please wait..."
+        btn.innerText = "Processing, please wait..."
         btn.append(" ", spinnerEl);
         e.currentTarget.submit();
     });
