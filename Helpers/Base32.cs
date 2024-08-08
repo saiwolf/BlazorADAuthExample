@@ -3,7 +3,7 @@ using System.Text;
 
 namespace BlazorADAuth.Helpers;
 
-internal static class Base32
+public static class Base32
 {
     private const string _base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 

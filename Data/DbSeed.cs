@@ -83,7 +83,6 @@ public static class DbSeed
                 },
                 // add more admins as needed
             ];
-
             foreach (var user in adminUsers)
             {
                 var result = userManager.CreateAsync(user).Result;
