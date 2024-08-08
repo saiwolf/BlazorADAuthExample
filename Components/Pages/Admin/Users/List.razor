@@ -1,0 +1,106 @@
+﻿@page "/admin/users"
+
+@using Microsoft.EntityFrameworkCore
+
+@inject AppUserManager<ApplicationUser> UserManager
+@inject ILogger<List> Logger
+@inject NavigationManager NavigationManager
+
+<PageTitle>List All Users</PageTitle>
+
+@if (Users is null)
+{
+    <p>Loading, please wait...</p>
+}
+else
+{
+    <div class="col-md-8 mx-auto">
+        <h2 class="text-center fw-bold">User List</h2>
+        <hr />
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr class="text-center">
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Users)
+                {
+                    <tr class="text-center">
+                        <td>@user.UserName</td>
+                        <td>
+                            <a href="@($"mailto:{user.Email}")">@user.Email</a>
+                        </td>
+                        <td class="text-end">
+                            @if (user.Roles is not null)
+                            {
+                                @if (user.Roles.Count == 1)
+                                {
+                                    @user.Roles.First()
+                                }
+                                else
+                                {
+                                    @foreach (var role in user.Roles)
+                                    {
+                                        if (role == user.Roles.Last())
+                                        {
+                                            <text>@role</text>
+                                        }
+                                        else
+                                        {
+                                            <text>@role, </text>
+                                        }
+                                    }
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<ListUserDto>? Users { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await GetDataAsync();
+    }
+
+    private async Task<List<ListUserDto>> GetDataAsync()
+    {
+        var users = await UserManager.Users.ToListAsync();
+        if (users is null || users.Count == 0)
+        {
+            return [];
+        }
+
+        List<ListUserDto> dtoUsers = [];
+
+        foreach (var user in users)
+        {
+            List<string> roles = [.. await UserManager.GetRolesAsync(user)];
+            dtoUsers.Add(new()
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                Roles = roles,
+            });
+        }
+
+        return dtoUsers;
+    }
+
+    private class ListUserDto
+    {
+        public string? Id { get; set; } = default!;
+        public string? UserName { get; set; } = default!;
+        public string? Email { get; set; } = default!;
+        public List<string>? Roles { get; set; } = [];
+    }
+}
