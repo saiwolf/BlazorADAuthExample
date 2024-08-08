@@ -5,6 +5,7 @@
 @inject AppUserManager<ApplicationUser> UserManager
 @inject ILogger<List> Logger
 @inject NavigationManager NavigationManager
+@inject SqidsEncoder<int> SqidsEncoder
 
 <PageTitle>List All Users</PageTitle>
 
@@ -29,7 +30,7 @@ else
                 @foreach (var user in Users)
                 {
                     <tr class="text-center">
-                        <td>@user.UserName</td>
+                        <td><a href="@($"/admin/users/{user.FriendlyId}")">@user.UserName</a></td>
                         <td>
                             <a href="@($"mailto:{user.Email}")">@user.Email</a>
                         </td>
@@ -86,7 +87,7 @@ else
             List<string> roles = [.. await UserManager.GetRolesAsync(user)];
             dtoUsers.Add(new()
             {
-                Id = user.Id,
+                FriendlyId = SqidsEncoder.Encode(user.FriendlyId),
                 UserName = user.UserName,
                 Email = user.Email,
                 Roles = roles,
@@ -98,7 +99,7 @@ else
 
     private class ListUserDto
     {
-        public string? Id { get; set; } = default!;
+        public string? FriendlyId { get; set; } = default!;
         public string? UserName { get; set; } = default!;
         public string? Email { get; set; } = default!;
         public List<string>? Roles { get; set; } = [];

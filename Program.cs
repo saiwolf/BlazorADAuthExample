@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Sqids;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -32,6 +33,12 @@ try
     services.AddScoped<IdentityUserAccessor>();
     services.AddScoped<IdentityRedirectManager>();
     services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+    services.AddSingleton(new SqidsEncoder<int>(new()
+    {
+        Alphabet = "scXxRo4blWiUfaNOuGnzDE5j7wBA6vkm309JV18rThMqPdLHgSyFZQIpYteKC2",
+        MinLength = 8,
+    }));
 
     services.AddAuthentication(options =>
     {
