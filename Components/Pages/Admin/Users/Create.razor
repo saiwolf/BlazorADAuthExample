@@ -1,10 +1,5 @@
 ﻿@page "/admin/users/create"
-@using System.ComponentModel.DataAnnotations
-@using System.Text
-@using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.EntityFrameworkCore
 
 @inject RoleManager<ApplicationRole> RoleManager
 @inject AppUserManager<ApplicationUser> UserManager
@@ -73,7 +68,7 @@
     private HttpContext? HttpContext { get; set; }
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
+    private CreateUserDto Input { get; set; } = new();
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
@@ -149,19 +144,5 @@
             throw new NotSupportedException("This UI requires a user store with email support.");
         }
         return (IUserEmailStore<ApplicationUser>)UserStore;
-    }
-    private sealed class InputModel
-    {
-        [Required]
-        [Display(Name = "AD Username")]
-        public string UserName { get; set; } = "";
-        [Required]
-        [EmailAddress]
-        [Display(Name = "Email")]
-        public string Email { get; set; } = "";
-
-        [Required]
-        [Display(Name = "Role")]
-        public string Role { get; set; } = "User";
     }
 }
