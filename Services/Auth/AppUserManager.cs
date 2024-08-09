@@ -2,6 +2,7 @@
 using BlazorADAuth.Entities.Auth;
 using BlazorADAuth.Helpers;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
@@ -58,6 +59,32 @@ public class AppUserManager<TUser>(
 
             return await FindByNameAsync(adUser.SamAccountName) ?? null;
 #pragma warning restore CA1416 // Validate platform compatibility
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{fileName} - [{methodName}]: {exMessage}", FILENAME, nameof(GetUserAsync), ex.Message);
+            return null;
+        }
+    }
+
+    public async Task<TUser?> GetUserAsync(int friendlyId)
+    {
+        try
+        {
+            List<ApplicationUser>? users = await Users.ToListAsync() as List<ApplicationUser>
+                ?? throw new Exception("No users found in DB!");
+
+            ApplicationUser? user = users.FirstOrDefault(f => f.FriendlyId == friendlyId)
+                ?? throw new Exception($"Unable to find user by ID: `{friendlyId}`.");
+
+            AdUser? adUser = await _adUserService.GetAdUser(user.UserName!)
+                ?? throw new Exception($"No AD user found for {user.UserName}");
+#pragma warning disable CA1416 // Validate platform compatibility
+            if (adUser.SamAccountName is null)
+                return null;
+#pragma warning restore CA1416 // Validate platform compatibility
+            
+            return user as TUser;
         }
         catch (Exception ex)
         {

@@ -1,0 +1,158 @@
+﻿@page "/admin/users/{id}"
+
+@inject AppUserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAdUserService AdUserService
+@inject ILogger<Details> Logger
+@inject NavigationManager NavigationManager
+@inject SqidsEncoder<int> SqidsEncoder
+
+<PageTitle>Details for user @(User is null ? null : User.UserName)</PageTitle>
+
+@if (User is null)
+{
+    <p>Loading, please wait...</p>
+}
+else
+{
+    <div class="col-md-8 mx-auto">
+        <h2 class="fw-bold text-center">@User.DisplayName</h2>
+        @if (IsDbUserCurrentUser)
+        {
+            <h6 class="text-center text-muted"><em>(That's you!)</em></h6>
+        }
+        <hr />
+        <table class="table table-bordered table-striped w-auto">
+            <tbody>
+                <tr>
+                    <td>Username:</td>
+                    <td>@User.UserName</td>
+                </tr>
+                <tr>
+                    <td>UPN:</td>
+                    <td>@User.UserPrincipalName</td>
+                </tr>
+                <tr>
+                    <td>Email:</td>
+                    <td>
+                        <a href="@($"mailto:{User.Email}")">@User.Email</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Email Confirmed:</td>
+                    <td>@(User.EmailConfirmed ? "✅" : "❌")</td>
+                </tr>
+                <tr>
+                    <td>Id:</td>
+                    <td>@User.Id</td>
+                </tr>
+                <tr>
+                    <td>Created:</td>
+                    <td>@User.Created.ToString()</td>
+                </tr>
+                <tr>
+                    <td>Updated:</td>
+                    <td>@(User.Updated.HasValue ? User.Updated.Value.ToString() : "Never")</td>
+                </tr>
+                <tr>
+                    <td>Lockout Enabled:</td>
+                    <td>@(User.LockoutEnabled ? "✅" : "❌")</td>
+                </tr>
+                <tr>
+                    <td>Two Factor Enabled:</td>
+                    <td>@(User.TwoFactorEnabled ? "✅" : "❌")</td>
+                </tr>
+                <tr>
+                    <td>Phone Number Confirmed:</td>
+                    <td>@(User.PhoneNumberConfirmed ? "✅" : "❌")</td>
+                </tr>
+                @if (User.Roles is not null)
+                {
+                    <tr>
+                        <td>Roles:</td>
+                        <td>
+                            @foreach (var role in User.Roles)
+                            {
+                                @role<br />
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <caption class="caption-top">
+                <NavLink href="/admin/users">&lt;&lt;&nbsp;Back</NavLink>
+            </caption>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private bool IsDbUserCurrentUser = false;
+
+    private UserDetailsDto? User { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {        
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authState.User;
+        if (currentUser.Identity is not null && currentUser.Identity.IsAuthenticated)
+        {
+            User = await GetUserData();
+            IsDbUserCurrentUser = currentUser.Identity.Name == User.UserName;
+        }
+    }
+
+    private async Task<UserDetailsDto> GetUserData()
+    {
+        try
+        {
+            int id = Sqids.DecodeSingleOrDefault(Id, SqidsEncoder);
+            var user = await UserManager.GetUserAsync(id);
+            var adUser = await AdUserService.GetAdUser(user!.UserName!);
+            user.AdUser = adUser;
+            return new()
+            {
+                Id = user.Id,
+                UserName = user.UserName!,
+                DisplayName = user.DisplayName!,
+                UserPrincipalName = adUser.UserPrincipalName!,
+                Email = user.Email!,
+                Created = user.Created,
+                Updated = user.Updated,
+                EmailConfirmed = user.EmailConfirmed,
+                PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                LockoutEnabled = user.LockoutEnabled,
+                TwoFactorEnabled = user.TwoFactorEnabled,
+                Roles = await UserManager.GetRolesAsync(user) as List<string>,
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("~/Components/Pages/Admin/Users/Details.razor - [{methodName}]: {exMessage}", nameof(GetUserData), ex.Message);
+            NavigationManager.NavigateTo("/Error");
+            throw;
+        }
+    }
+
+    private class UserDetailsDto
+    {
+        public string Id { get; set; } = default!;
+        public string UserName { get; set; } = default!;
+        public string UserPrincipalName { get; set; } = default!;
+        public string Email { get; set; } = default!;
+        public string DisplayName { get; set; } = default!;
+
+        public DateTime Created { get; set; }
+        public DateTime? Updated { get; set; }
+
+        public bool EmailConfirmed { get; set; }
+        public bool PhoneNumberConfirmed { get; set; }
+        public bool TwoFactorEnabled { get; set; }
+        public bool LockoutEnabled { get; set; }
+
+        public List<string>? Roles { get; set; } = null;        
+    }
+}
