@@ -79,7 +79,7 @@ public partial class Create : ComponentBase
 
         Logger!.LogInformation("Added user: `{userName}` with email: `{email}` to role: `{role}`.", Input.UserName, Input.Email, Input.Role);
 
-        RedirectManager!.RedirectToWithStatus("/admin", "User added!", HttpContext!);
+        RedirectManager!.RedirectToWithStatus("/admin/users", "User added!", HttpContext!);
     }
 
     private ApplicationUser CreateAppUser()

@@ -1,0 +1,154 @@
+﻿@page "/admin/users/{id}/edit"
+
+@inject AppUserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject IAdUserService AdUserService
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<Edit> Logger
+@inject NavigationManager NavigationManager
+@inject SqidsEncoder<int> SqidsEncoder
+
+<PageTitle>Editing user @(Input is null ? null : Input.UserName)</PageTitle>
+
+@if (Input is null)
+{
+    <p>Loading, please wait...</p>
+}
+else
+{
+    <PageScript Src="./Components/Pages/Admin/Users/Edit.razor.js" />
+
+    <div class="col-md-8 mx-auto">
+        <StatusMessage Message="@Message" />
+        <EditForm id="editUserForm" method="post" OnValidSubmit="EditUser"
+                  FormName="editUser" Model="Input" Enhance>
+            <DataAnnotationsValidator />
+            <h2 class="text-center fw-bold">Edit Account.</h2>
+            <hr />
+            <ValidationSummary />
+            <div class="mb-3">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input class="form-control"
+                               autocomplete="username" value="@Input.UserName"
+                               type="text" disabled />
+                        <label for="Input.Username">User Name</label>
+                    </div>
+                    <span class="input-group-text">@@your.domain</span>
+                </div>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="email"
+                       class="form-control" value="@Input!.Email"
+                       disabled />
+                <label for="Input.Email">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.DisplayName" type="text"
+                           class="form-control" autocomplete="name"
+                           aria-required="true" placeholder="John Doe"
+                           required />
+                <label for="Input.DisplayName">Display Name</label>
+                <ValidationMessage For="() => Input.DisplayName" class="text-danger" />
+            </div>
+            <div class="form-check form-switch mb-3">
+                <InputCheckbox @bind-Value="Input.EmailConfirmed"
+                               class="form-check-input"
+                               title="Email Confirmed" placeholder="" />
+                <label class="form-check-label" for="Input.EmailConfirmed">Email Confirmed</label>
+                <ValidationMessage For="() => Input.EmailConfirmed" class="text-danger" />
+            </div>
+            <div class="form-check form-switch mb-3">
+                <InputCheckbox @bind-Value="Input.PhoneNumberConfirmed"
+                               class="form-check-input"
+                               title="Phone Number Confirmed" placeholder="" />
+                <label class="form-check-label" for="Input.PhoneNumberConfirmed">Phone Number Confirmed</label>
+                <ValidationMessage For="() => Input.PhoneNumberConfirmed" class="text-danger" />
+            </div>
+            <div class="form-check form-switch mb-3">
+                <InputCheckbox @bind-Value="Input.LockoutEnabled"
+                               class="form-check-input"
+                               title="Lockout Enabled" placeholder="" />
+                <label class="form-check-label" for="Input.LockoutEnabled">Lockout Enabled</label>
+                <ValidationMessage For="() => Input.LockoutEnabled" class="text-danger" />
+            </div>
+            <div class="mb-3 vstack gap-2">
+                <button id="editUserSubmit" type="submit" class="w-100 btn btn-lg btn-warning">Edit User</button>
+                <NavLink href="@($"/admin/users/{Id}")" role="button" class="btn btn-lg btn-primary">Back</NavLink>
+            </div>
+        </EditForm>
+    </div>
+
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    public int DecodedId { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private IEnumerable<IdentityError>? identityErrors;
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    [SupplyParameterFromForm(FormName = "editUser")]
+    private EditUserDto? Input { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        DecodedId = Sqids.DecodeSingleOrDefault(Id, SqidsEncoder);        
+        Input ??= await GetUserData();
+    }
+
+    private async Task<EditUserDto> GetUserData()
+    {
+        try
+        {
+            int id = DecodedId;
+            ApplicationUser user = await UserManager.GetUserAsync(id) 
+                ?? throw new Exception("Unable to locate user.");
+            return new()
+            {
+                UserName = user.UserName,
+                Email = user.Email,
+                DisplayName = user.DisplayName,
+                EmailConfirmed = user.EmailConfirmed,
+                PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                LockoutEnabled = user.LockoutEnabled
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("~/Components/Pages/Admin/Users/Details.razor - [{methodName}]: {exMessage}", nameof(GetUserData), ex.Message);
+            NavigationManager.NavigateTo("/Error");
+            throw;
+        }
+    }
+
+    public async Task EditUser()
+    {
+        var user = await UserManager.GetUserAsync(DecodedId);
+        if (user is null)
+        {
+            identityErrors = [IdentityErrorExtensions.AppInvalidUserName()];
+            return;
+        }
+
+        user.DisplayName = Input!.DisplayName;
+        user.EmailConfirmed = Input.EmailConfirmed;
+        user.LockoutEnabled = Input.LockoutEnabled;
+        user.PhoneNumberConfirmed = Input.PhoneNumberConfirmed;
+
+        var result = await UserManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            identityErrors = result.Errors;
+            return;
+        }
+
+        RedirectManager.RedirectToCurrentPageWithStatus("User updated.", HttpContext!);
+    }
+}

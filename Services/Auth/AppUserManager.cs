@@ -1,6 +1,7 @@
 ﻿using BlazorADAuth.Contracts;
 using BlazorADAuth.Entities.Auth;
 using BlazorADAuth.Helpers;
+using Humanizer.Localisation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -91,5 +92,23 @@ public class AppUserManager<TUser>(
             _logger.LogError(ex, "{fileName} - [{methodName}]: {exMessage}", FILENAME, nameof(GetUserAsync), ex.Message);
             return null;
         }
+    }
+
+    public virtual async Task<IdentityResult> ConfirmEmailAsync(TUser user)
+    {
+        ThrowIfDisposed();
+        var store = GetEmailStore();
+        ArgumentNullException.ThrowIfNull(user);
+        await store.SetEmailConfirmedAsync(user, true, CancellationToken).ConfigureAwait(false);
+        return await UpdateUserAsync(user).ConfigureAwait(false);
+    }
+
+    private IUserEmailStore<TUser> GetEmailStore()
+    {
+        if (Store is not IUserEmailStore<TUser> emailStore)
+        {
+            throw new NotSupportedException($"Store: `{Store.GetType()}` is not of type: `{nameof(IUserEmailStore<TUser>)}`");
+        }
+        return emailStore;
     }
 }

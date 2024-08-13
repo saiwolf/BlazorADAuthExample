@@ -25,4 +25,13 @@ public static class IdentityErrorExtensions
             Description = "Invalid AD username"
         };
     }
+
+    public static IdentityError AppInvalidUserName()
+    {
+        return new IdentityError
+        {
+            Code = nameof(AppInvalidUserName),
+            Description = "Invalid App username"
+        };
+    }
 }
