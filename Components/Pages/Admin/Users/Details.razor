@@ -22,7 +22,7 @@ else
             <h6 class="text-center text-muted"><em>(That's you!)</em></h6>
         }
         <hr />
-        <table class="table table-bordered table-striped w-auto">
+        <table class="table table-bordered table-striped">
             <tbody>
                 <tr>
                     <td>Username:</td>
@@ -78,12 +78,12 @@ else
                         </td>
                     </tr>
                 }
-            </tbody>
-            <caption class="caption-top">
-                <NavLink href="/admin/users">&lt;&lt;&nbsp;Back</NavLink> |
-                <NavLink href="@($"/admin/users/{Id}/edit")">Edit User</NavLink>
-            </caption>
+            </tbody>            
         </table>
+        <div class="vstack gap-2">
+            <NavLink href="@($"/admin/users/{Id}/edit")" class="btn btn-lg btn-primary">Edit User</NavLink>
+            <NavLink href="/admin/users" class="btn btn-link">Back</NavLink>            
+        </div>
     </div>
 }
 
