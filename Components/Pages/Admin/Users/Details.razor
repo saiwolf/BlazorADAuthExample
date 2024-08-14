@@ -16,6 +16,7 @@
 else
 {
     <div class="col-md-8 mx-auto">
+        <StatusMessage />
         <h2 class="fw-bold text-center">@User.DisplayName</h2>
         @if (IsDbUserCurrentUser)
         {
@@ -94,6 +95,8 @@ else
     private bool IsDbUserCurrentUser = false;
 
     private UserDetailsDto? User { get; set; } = null;
+
+    private string? Message { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {        

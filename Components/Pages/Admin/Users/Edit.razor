@@ -141,7 +141,7 @@ else
         user.EmailConfirmed = Input.EmailConfirmed;
         user.LockoutEnabled = Input.LockoutEnabled;
         user.PhoneNumberConfirmed = Input.PhoneNumberConfirmed;
-        user.Updated = DateTime.Now,
+        user.Updated = DateTime.Now;
 
         var result = await UserManager.UpdateAsync(user);
         if (!result.Succeeded)
