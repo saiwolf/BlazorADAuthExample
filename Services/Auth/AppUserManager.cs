@@ -1,7 +1,5 @@
 ﻿using BlazorADAuth.Contracts;
 using BlazorADAuth.Entities.Auth;
-using BlazorADAuth.Helpers;
-using Humanizer.Localisation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

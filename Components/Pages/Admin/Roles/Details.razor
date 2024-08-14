@@ -1,0 +1,96 @@
+﻿@page "/admin/roles/{id}"
+
+@inject AppUserManager<ApplicationUser> UserManager
+@inject AppRoleManager<ApplicationRole> RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAdUserService AdUserService
+@inject ILogger<Details> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject SqidsEncoder<int> SqidsEncoder
+
+<PageTitle>Details for role @(Role is not null ? Role.RoleName : null)</PageTitle>
+
+@if (Role is null)
+{
+    <p>Loading, please wait...</p>
+}
+else
+{
+    <div class="col-md-8 mx-auto">
+        <StatusMessage Message="@Message" />
+        <h2 class="text-center fw-bold">Role: @Role.RoleName</h2>
+        <table class="table table-bordered table-striped">
+            <tbody>
+                <tr>
+                    <td>ID:</td>
+                    <td>@Role.RoleId</td>
+                </tr>
+                <tr>
+                    <td>Created:</td>
+                    <td>@Role.Created.ToString()</td>
+                </tr>
+                <tr>
+                    <td>Updated:</td>
+                    <td>@(Role.Updated.HasValue ? Role.Updated : "Never")</td>
+                </tr>
+                @if (Role.Users is not null)
+                {
+                    <tr>
+                        <td>Users:</td>
+                        <td>
+                            @foreach (var user in Role.Users)
+                            {
+                                <NavLink href="@($"/admin/users/{SqidsEncoder.Encode(user.FriendlyId)}")">
+                                    @user
+                                </NavLink><br />
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private IEnumerable<IdentityError>? identityErrors;
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    private RoleDetailsDto? Role { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Role = await GetRoleData();
+    }
+
+    private async Task<RoleDetailsDto> GetRoleData()
+    {
+        try
+        {
+            int id = Sqids.DecodeSingleOrDefault(Id, SqidsEncoder);
+            var role = await RoleManager.FindByIdAsync(id);            
+            return new()
+            {
+                RoleId = role!.Id,
+                RoleName = role!.Name!,
+                Created = role.Created,
+                Updated = role.Updated,
+                Users = await UserManager.GetUsersInRoleAsync(role.Name) as List<ApplicationUser>,
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("~/Components/Pages/Admin/Users/Details.razor - [{methodName}]: {exMessage}", nameof(GetRoleData), ex.Message);
+            NavigationManager.NavigateTo("/Error");
+            throw;
+        }
+    }
+}

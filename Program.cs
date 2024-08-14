@@ -56,8 +56,9 @@ try
         options.SignIn.RequireConfirmedEmail = false;
         options.User.RequireUniqueEmail = true;
     })
-        .AddUserManager<AppUserManager<ApplicationUser>>()
         .AddRoles<ApplicationRole>()
+        .AddUserManager<AppUserManager<ApplicationUser>>()
+        .AddRoleManager<AppRoleManager<ApplicationRole>>()
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddSignInManager<AppSignInManager<ApplicationUser>>()
         .AddDefaultTokenProviders();
