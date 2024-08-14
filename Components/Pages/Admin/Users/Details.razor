@@ -162,7 +162,19 @@ else
             identityErrors = [IdentityErrorExtensions.AppInvalidOperation("Current Admin Cannot Delete Own Account")];
             return;
         }
-        await Task.Delay(1000);
+        int id = Sqids.DecodeSingleOrDefault(Id, SqidsEncoder);
+        var user = await UserManager.GetUserAsync(id);
+        if (user is null)
+        {
+            identityErrors = [IdentityErrorExtensions.AppInvalidOperation("User could not be found in DB!")];
+            return;
+        }
+        var result = await UserManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            identityErrors = [IdentityErrorExtensions.AppInvalidOperation("Unexpected error occurred deleting user.")];
+            return;
+        }
         RedirectManager.RedirectToWithStatus($"/admin/users/", $"User with ID: `{Id}` deleted.", HttpContext!);
     }
 }
