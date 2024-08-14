@@ -96,8 +96,6 @@ else
 
     private UserDetailsDto? User { get; set; } = null;
 
-    private string? Message { get; set; } = string.Empty;
-
     protected override async Task OnInitializedAsync()
     {        
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();

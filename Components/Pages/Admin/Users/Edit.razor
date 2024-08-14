@@ -112,9 +112,9 @@ else
                 ?? throw new Exception("Unable to locate user.");
             return new()
             {
-                UserName = user.UserName,
-                Email = user.Email,
-                DisplayName = user.DisplayName,
+                UserName = user.UserName!,
+                Email = user.Email!,
+                DisplayName = user.DisplayName!,
                 EmailConfirmed = user.EmailConfirmed,
                 PhoneNumberConfirmed = user.PhoneNumberConfirmed,
                 LockoutEnabled = user.LockoutEnabled,
@@ -150,6 +150,6 @@ else
             return;
         }
 
-        RedirectManager.RedirectToCurrentPageWithStatus("User updated.", HttpContext!);
+        RedirectManager.RedirectToWithStatus($"/admin/users/{Id}", "User updated.", HttpContext!);
     }
 }
