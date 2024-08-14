@@ -4,19 +4,7 @@
 
 <h2>Admin Area</h2>
 
-@if(!string.IsNullOrEmpty(statusMessage))
-{
-    <StatusMessage />
-}
-
 <ul>
-    <li><NavLink href="/admin/users">List Users</NavLink></li>
-    <li><NavLink href="/admin/users/create">Create New User</NavLink></li>
+    <li><NavLink href="/admin/users">Users</NavLink></li>
+    <li><NavLink href="/admin/roles">Roles</NavLink></li>
 </ul>
-
-@code {
-    [CascadingParameter]
-    private HttpContext? HttpContext { get; set; } = default!;
-
-    private string? statusMessage = string.Empty;
-}
