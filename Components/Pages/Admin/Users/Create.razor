@@ -45,8 +45,9 @@
                 <label for="Input.Role">Role</label>
                 <ValidationMessage For="() => Input.Role" class="text-danger" />
             </div>
-            <div>
+            <div class="mb-3 vstack gap-2">
                 <button id="createNewUserSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Add User</button>
+                <NavLink href="/admin/users" class="btn btn-link">Back</NavLink>
             </div>
         </EditForm>
     </div>
