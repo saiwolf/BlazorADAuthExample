@@ -17,5 +17,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         modelBuilder.Entity<ApplicationUser>()
             .HasAlternateKey(a => a.FriendlyId);
+
+        modelBuilder.Entity<ApplicationRole>().Property(p => p.FriendlyId)
+            .ValueGeneratedOnAdd().UseIdentityColumn(1000, 1);
+
+        modelBuilder.Entity<ApplicationRole>()
+            .HasAlternateKey(a => a.FriendlyId);
     }
 }

@@ -1,0 +1,72 @@
+﻿@page "/admin/roles"
+
+@inject ILogger<List> Logger
+@inject NavigationManager NavigationManager
+@inject RoleManager<ApplicationRole> RoleManager
+@inject SqidsEncoder<int> SqidsEncoder
+
+<PageTitle>List All Roles</PageTitle>
+
+@if (Roles is null)
+{
+    <p>Loading, please wait...</p>
+}
+else
+{
+    <div class="col-md-8 mx-auto text-center">
+        <StatusMessage />
+        <h2 class="text-center fw-bold">Role Administration</h2>
+        <hr />        
+        <table class="table table-bordered border-dark-subtle text-center mx-auto">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Roles</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var role in Roles)
+                {
+                    <tr>
+                        <td>
+                            <NavLink href="@($"/admin/roles/{role.FriendlyId}")">@role.RoleName</NavLink>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <caption class="caption-top text-center">
+                <NavLink class="btn btn-primary" href="/admin/roles/create">Create App Role</NavLink>
+            </caption>
+        </table>
+    </div>
+}
+
+@code {
+    private List<ListRolesDto>? Roles { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Roles = await GetData();
+    }
+
+    private async Task<List<ListRolesDto>?> GetData()
+    {
+        var roles = await RoleManager.Roles.OrderBy(o => o.Name).AsNoTracking().ToListAsync();
+        if (roles is null || roles.Count == 0)
+        {
+            return null;
+        }
+
+        List<ListRolesDto> dtoRoles = [];
+
+        foreach (var role in roles)
+        {
+            dtoRoles.Add(new()
+            {
+                FriendlyId = SqidsEncoder.Encode(role.FriendlyId),
+                RoleName = role.Name!,
+            });
+        }
+
+        return dtoRoles;
+    }
+}
