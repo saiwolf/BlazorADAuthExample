@@ -34,4 +34,13 @@ public static class IdentityErrorExtensions
             Description = "Invalid App username"
         };
     }
+
+    public static IdentityError AppInvalidOperation(string reason)
+    {
+        return new IdentityError
+        {
+            Code = nameof(AppInvalidOperation),
+            Description = $"User attempted invalid operation: `{reason}`"
+        };
+    }
 }

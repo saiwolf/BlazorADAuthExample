@@ -5,9 +5,11 @@
 @inject IAdUserService AdUserService
 @inject ILogger<Details> Logger
 @inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
 @inject SqidsEncoder<int> SqidsEncoder
 
 <PageTitle>Details for user @(User is null ? null : User.UserName)</PageTitle>
+<PageScript Src="./Components/Pages/Admin/Users/Details.razor.js" />
 
 @if (User is null)
 {
@@ -16,7 +18,7 @@
 else
 {
     <div class="col-md-8 mx-auto">
-        <StatusMessage />
+        <StatusMessage Message="@Message" />
         <h2 class="fw-bold text-center">@User.DisplayName</h2>
         @if (IsDbUserCurrentUser)
         {
@@ -82,7 +84,14 @@ else
             </tbody>            
         </table>
         <div class="vstack gap-2">
-            <NavLink href="@($"/admin/users/{Id}/edit")" class="btn btn-lg btn-primary">Edit User</NavLink>
+            <NavLink href="@($"/admin/users/{Id}/edit")" class="btn btn-lg btn-primary">Edit User</NavLink>            
+            <EditForm id="deleteForm" Model="Id" FormName="deleteform" OnValidSubmit="DeleteUser">
+                <input type="hidden" name="id" value="@Id" />
+                <button id="deleteBtn" type="submit" class="w-100 btn btn-lg btn-danger" disabled="@IsDbUserCurrentUser">
+                    Delete User
+                </button>
+            </EditForm>
+            
             <NavLink href="/admin/users" class="btn btn-link">Back</NavLink>            
         </div>
     </div>
@@ -92,7 +101,14 @@ else
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
     private bool IsDbUserCurrentUser = false;
+
+    private IEnumerable<IdentityError>? identityErrors;
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
     private UserDetailsDto? User { get; set; } = null;
 
@@ -137,5 +153,16 @@ else
             NavigationManager.NavigateTo("/Error");
             throw;
         }
+    }
+
+    public async Task DeleteUser()
+    {
+        if (IsDbUserCurrentUser)
+        {
+            identityErrors = [IdentityErrorExtensions.AppInvalidOperation("Current Admin Cannot Delete Own Account")];
+            return;
+        }
+        await Task.Delay(1000);
+        RedirectManager.RedirectToWithStatus($"/admin/users/", $"User with ID: `{Id}` deleted.", HttpContext!);
     }
 }
