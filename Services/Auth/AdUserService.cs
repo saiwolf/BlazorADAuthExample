@@ -105,6 +105,28 @@ public class AdUserService(ILogger<AdUserService> logger)
         return Task.FromResult(users.FirstOrDefault());
     }
 
+    public Task<List<Principal>?> GetGroupsForUser(string samAccountName)
+    {
+        try
+        {
+            PrincipalContext principalContext = new(ContextType.Domain);
+            var user = UserPrincipal.FindByIdentity(principalContext, IdentityType.SamAccountName, samAccountName)
+                ?? throw new Exception($"Cannot find user by samAccountName: `{samAccountName}`");
+
+            var groups = user.GetGroups().ToList();
+            if (groups is null || groups.Count == 0)
+            {
+                return Task.FromResult<List<Principal>?>(null);
+            }
+            return Task.FromResult<List<Principal>?>(groups);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{fileName} - [{methodName}]: {exMessage}", FILENAME, nameof(GetGroupsForUser), ex.Message);
+            return Task.FromResult<List<Principal>?>(null);
+        }
+    }
+
     public Task<bool> IsUserAdmin(string samAccountName, string group = "Domain Admins")
     {
         try

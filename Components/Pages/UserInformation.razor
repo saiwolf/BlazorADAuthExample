@@ -1,0 +1,116 @@
+﻿@page "/user-info"
+@using System.Security.Claims
+@using System.DirectoryServices.AccountManagement
+@using BlazorADAuth.Components.Account
+@using BlazorADAuth.Contracts
+@using BlazorADAuth.Entities.Auth
+@attribute [StreamRendering]
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAdUserService AdUserService
+@inject IdentityUserAccessor UserAccessor
+
+<PageTitle>User Info</PageTitle>
+
+<div class="col-md-8 mx-auto">
+    <h1 class="fw-bold text-center">Current User Info</h1>
+    @if (CurrentUser is not null)
+    {
+        <h4 class="text-center text-muted">@CurrentUser.AdUser!.UserPrincipalName</h4>
+    }
+
+    <div class="accordion accordion-flush" id="userInfoSection">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold"
+                        type="button" data-bs-toggle="collapse"
+                    data-bs-target="#groupsTable" aria-expanded="true"
+                    aria-controls="groupsTable">
+                    AD Group Memberships
+                </button>
+            </h2>
+            <div id="groupsTable" class="accordion-collapse collapse" data-bs-parent="#userInfoSection">
+                <div class="accordion-body">
+                    @if (UserInfo.Groups is null)
+                    {
+                        <p>Loading groups, please wait...</p>
+                    }
+                    else
+                    {
+                        <table class="table">
+                            <tbody>
+                                @foreach (var group in UserInfo.Groups)
+                                {
+                                    <tr>
+                                        <td>
+                                            @(string.IsNullOrEmpty(group.DisplayName)
+                                                ? group.Name
+                                                : group.DisplayName)
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold"
+                        type="button" data-bs-toggle="collapse"
+                        data-bs-target="#claimsTable" aria-expanded="false"
+                        aria-controls="claimsTable">
+                    App User Claims
+                </button>
+            </h2>
+            <div id="claimsTable" class="accordion-collapse collapse" data-bs-parent="#userInfoSection">
+                <div class="accordion-body">
+                    @if (UserInfo.Claims is null)
+                    {
+                        <p>Loading claims, please wait...</p>
+                    }
+                    else
+                    {
+                        <table class="table">
+                            <tbody>
+                                @foreach (var claim in UserInfo.Claims)
+                                {
+                                    <tr>
+                                        <td>@claim.Type - @claim.Value</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private ApplicationUser? CurrentUser { get; set; }
+    private UserInfoDto UserInfo { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            CurrentUser = await UserAccessor.GetRequiredUserAsync(HttpContext!);
+            UserInfo!.Claims = user.Claims;
+            UserInfo.Groups = await AdUserService.GetGroupsForUser(user.Identity.Name!);
+        }
+    }
+
+    private class UserInfoDto
+    {
+        public IEnumerable<Claim>? Claims { get; set; }
+        public List<Principal>? Groups { get; set; }
+    }
+}
