@@ -34,10 +34,10 @@ else
                     <td>Updated:</td>
                     <td>@(Role.Updated.HasValue ? Role.Updated : "Never")</td>
                 </tr>
-                @if (Role.Users is not null)
+                @if (Role.Users is not null && Role.Users.Count > 0)
                 {
                     <tr>
-                        <td>Users:</td>
+                        <td>Members:</td>
                         <td>
                             @foreach (var user in Role.Users)
                             {
@@ -50,6 +50,11 @@ else
                 }
             </tbody>
         </table>
+        <div class="vstack gap-2">
+            <NavLink href="@($"/admin/roles/{Id}/edit")" class="btn btn-lg btn-primary">Edit Role</NavLink>
+
+            <NavLink href="/admin/roles" class="btn btn-link">Back</NavLink>
+        </div>
     </div>
 }
 
