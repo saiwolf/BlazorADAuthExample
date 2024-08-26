@@ -1,6 +1,6 @@
 ﻿export function onLoad() {    
     console.log('Loaded');
-    addEvent();
+    window.blazorUtils.SSRSpinnerSubmitSetup("loginSubmit", "Logging in, please wait...")
 }
 
 export function onUpdate() {
@@ -9,24 +9,4 @@ export function onUpdate() {
 
 export function onDispose() {
     console.log('Disposed');
-}
-
-function addEvent() {
-    const btn = document.getElementById("loginSubmit")
-    const form = document.getElementById("loginForm")
-    const spinnerEl = document.createElement("span");
-    spinnerEl.classList.add("spinner-border", "spinner-border-sm");
-    spinnerEl.setAttribute("role", "status");
-    spinnerEl.setAttribute("aria-hidden", "true"); 
-
-    btn.disabled = false;
-
-    form.addEventListener("submit", (e) => {
-        console.log("Submitting.");
-        e.preventDefault();
-        btn.disabled = true;
-        btn.innerText = "Logging in, please wait..."
-        btn.append(" ", spinnerEl);
-        e.currentTarget.submit();
-    });
 }
