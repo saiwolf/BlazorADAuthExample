@@ -6,6 +6,13 @@ use on-prem Active Directory to do password checking.
 Since this project leverages Identity, a DB is created to store user information. Since AD is used for password
 checking, the password is **never** stored in the DB. Only user information pertinent to the app is stored.
 
+## TODO (As of 8/26/2024)
+
+- [ ] Finish Admin Role pages
+- [x] Finish Admin User Pages
+- [x] Add User Claims and Group Info
+- [x] Override Identity functions to check on-prem AD for password validation
+
 ## Requirements
 
 - On-premises Active Directory (at least one DC should be reachable from the machine the app runs on).
